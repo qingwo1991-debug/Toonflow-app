@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Toonflow</title>
+    <script>
+      // ACT: 局域网 HTTP 缺少 randomUUID，使用仍可用的 getRandomValues 生成 UUID v4。
+      // 不覆盖原生实现，不使用弱随机数兜底；此补丁不替代 HTTPS。
+      if (typeof globalThis.crypto?.randomUUID !== "function" && typeof globalThis.crypto?.getRandomValues === "function") {
+        globalThis.crypto.randomUUID = function randomUUID() {
+          const b = globalThis.crypto.getRandomValues(new Uint8Array(16));
+          b[6] = (b[6] & 0x0f) | 0x40;
+          b[8] = (b[8] & 0x3f) | 0x80;
+          const h = Array.from(b, (x) => x.toString(16).padStart(2, "0"));
+          return `${h[0]}${h[1]}${h[2]}${h[3]}-${h[4]}${h[5]}-${h[6]}${h[7]}-${h[8]}${h[9]}-${h[10]}${h[11]}${h[12]}${h[13]}${h[14]}${h[15]}`;
+        };
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>

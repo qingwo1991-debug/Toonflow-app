@@ -23,7 +23,6 @@
             <section class="summaryCard" aria-label="本金余额">
               <div class="summaryLabel"><span>本金余额</span><icon-wallet :size="20" aria-hidden="true" /></div>
               <strong>{{ formatMoney(previewData?.totalPoints) }}</strong>
-              <el-button class="rechargeButton" type="primary" :icon="IconCreditCard" @click="accountTab = 'wallet'">充值</el-button>
             </section>
             <section class="summaryCard" aria-label="可用赠送金">
               <div class="summaryLabel"><span>可用赠送金</span><icon-gift :size="20" aria-hidden="true" /></div>
@@ -63,14 +62,6 @@
             <accountChart kind="line" :dates="trendData.dates" :series="trendData.series" label="最近14天的余额消耗趋势" :loading="previewLoading" />
           </section>
         </div>
-        <wallet
-          ref="walletPanel"
-          v-show="accountTab === 'wallet'"
-          v-model:loading="walletLoading"
-          :visible="visible !== false && accountTab === 'wallet'"
-          :token="accountToken"
-          :balance="previewData?.totalPoints"
-          @balanceChanged="refreshPreview" />
         <taskRecords
           ref="records"
           v-show="accountTab === 'taskRecords'"
@@ -154,7 +145,7 @@
 import { computed, onBeforeUnmount, reactive, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
 import { translate } from "@toonflow/i18n/vue";
-import { IconChartBar, IconCreditCard, IconExternalLink, IconGift, IconLogout, IconRefresh, IconWallet } from "@tabler/icons-vue";
+import { IconChartBar, IconExternalLink, IconGift, IconLogout, IconRefresh, IconWallet } from "@tabler/icons-vue";
 import logoUrl from "@toonflow/assets/logo.svg";
 import type { Captcha, Login, PreviewData, UsageStatistics } from "@toonflow/server/channel";
 import http from "@/lib/http";
@@ -164,7 +155,6 @@ import forgotPasswordDialog from "./forgotPasswordDialog.vue";
 import accountChart from "./accountChart.vue";
 import modelCatalog from "./modelCatalog.vue";
 import taskRecords from "./taskRecords.vue";
-import wallet from "./wallet.vue";
 import subAccounts from "./subAccounts.vue";
 
 type AccountData = {
@@ -189,16 +179,14 @@ const catalog = ref<InstanceType<typeof modelCatalog>>();
 const modelsLoading = ref(false);
 const records = ref<InstanceType<typeof taskRecords>>();
 const recordsLoading = ref(false);
-const walletPanel = ref<InstanceType<typeof wallet>>();
-const walletLoading = ref(false);
 const subAccountsPanel = ref<InstanceType<typeof subAccounts>>();
 const subAccountsLoading = ref(false);
-const accountOptions = [{ label: "总览", value: "overview" }, { label: "钱包", value: "wallet" }, { label: "任务记录", value: "taskRecords" }, { label: "凭证", value: "subAccounts" }, { label: "模型列表", value: "models" }];
+const accountOptions = [{ label: "总览", value: "overview" }, { label: "任务记录", value: "taskRecords" }, { label: "凭证", value: "subAccounts" }, { label: "模型列表", value: "models" }];
 const previewData = ref<PreviewData>();
 const usageStatistics = ref<UsageStatistics>();
 const previewLoading = ref(false);
 const usageLoading = ref(false);
-const overviewLoading = computed(() => previewLoading.value || usageLoading.value || toonflowProviderLoading.value || modelsLoading.value || recordsLoading.value || walletLoading.value || subAccountsLoading.value);
+const overviewLoading = computed(() => previewLoading.value || usageLoading.value || toonflowProviderLoading.value || modelsLoading.value || recordsLoading.value || subAccountsLoading.value);
 const previewError = ref("");
 const usageError = ref("");
 const overviewError = computed(() => [...new Set([previewError.value, usageError.value, toonflowProviderError.value].filter(Boolean))].join("；"));
@@ -296,7 +284,6 @@ function refreshAccount() {
   void refreshToonflowProvider();
   if (accountTab.value === "models") void catalog.value?.refresh();
   if (accountTab.value === "taskRecords") void records.value?.refresh();
-  if (accountTab.value === "wallet") void walletPanel.value?.refresh();
   if (accountTab.value === "subAccounts") void subAccountsPanel.value?.refresh();
 }
 

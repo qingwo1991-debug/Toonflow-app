@@ -1,0 +1,55 @@
+name: Build Toonflow Docker Image
+
+# 定制版 Docker 镜像构建：在 GitHub Actions 云端构建（避免占用本地磁盘），
+# 推送到 ghcr.io，换机器时 `docker pull` 即可一键拉回使用。
+# 触发：推送到 master / 手动运行。
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - "docs/**"
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: toonflow-docker
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 构建并推送 Docker 镜像
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 登录 GitHub 容器仓库
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 提取镜像元数据
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 构建并推送
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
